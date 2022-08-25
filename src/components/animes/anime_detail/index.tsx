@@ -25,7 +25,7 @@ import {
   CollectionType,
 } from "../../collections/CollectionContext";
 import { checkCollectionExists } from "../../helpers/checkCollectionExists";
-import { checkDuplicateCollection } from "../../helpers/checkDuplicateCollection";
+import { checkDuplicateCollectionByName } from "../../helpers/checkDuplicateCollection";
 
 import {
   GetAnimeDetailParamType,
@@ -33,13 +33,14 @@ import {
   GET_ANIME_DETAIL,
 } from "../queries";
 import { MediaType } from "../types";
-import { INITIAL_ANIME_DETAIL } from "../constants";
+import { INITIAL_ANIME_DETAIL, SPECIAL_CHAR_FORMAT } from "../constants";
 import AnimeInfo from "./components/AnimeInfo";
 
 const Dialog = lazy(() => import("../../palette/Dialog"));
 
 const AnimeDetail = () => {
-  const { collections, addCollection } = useContext(CollectionContext);
+  const { collections, addCollection, addAnimeToCollection } =
+    useContext(CollectionContext);
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -76,25 +77,26 @@ const AnimeDetail = () => {
 
   const handleAddAnimeToCollection = (isSubmit: boolean) => {
     if (isSubmit) {
-      const newCollections = selectedCollections.map((selected) => ({
-        ...selected,
-        animes: [
-          ...selected.animes,
-          {
-            id: animeDetail.id,
-            title: animeDetail.title,
-            coverImage: animeDetail.coverImage,
-          },
-        ],
-      }));
-      addCollection(newCollections);
+      const selectedCollectionIds = selectedCollections.map(
+        (selected) => selected.id
+      );
+      addAnimeToCollection(selectedCollectionIds, [animeDetail]);
     }
     setOpenDialog(false);
     setShowInputField(false);
   };
 
   const handleAddCollection = () => {
-    const duplicate = checkDuplicateCollection(collections, newCollectionName);
+    const duplicate = checkDuplicateCollectionByName(
+      collections,
+      newCollectionName
+    );
+
+    if (newCollectionName === "") {
+      setErrMessage("Collection name cannot be empty!");
+      setIsError(true);
+      return;
+    }
 
     if (duplicate) {
       setErrMessage(`${newCollectionName} already exists in colections!`);
@@ -102,7 +104,14 @@ const AnimeDetail = () => {
       return;
     }
 
+    if (SPECIAL_CHAR_FORMAT.test(newCollectionName)) {
+      setErrMessage("Collection name cannot contain special characters!");
+      setIsError(true);
+      return;
+    }
+
     const newCollection: CollectionType = {
+      id: (collections.slice(-1)?.[0]?.id || 0) + 1,
       name: newCollectionName,
       animes: [],
     };
@@ -127,19 +136,17 @@ const AnimeDetail = () => {
     const { checked, value } = e.target;
 
     const selected = collections.filter(
-      (collection) => collection.name.toLowerCase() === value.toLowerCase()
+      (collection) => collection.id === parseInt(value)
     );
     setSelectedCollections((prev) => {
       return checked
         ? [...(prev ? prev : []), ...selected]
-        : prev?.filter(
-            (item) => item.name.toLowerCase() !== value.toLowerCase()
-          );
+        : prev?.filter((item) => item.id !== parseInt(value));
     });
   };
 
-  const redirectToCollection = (name: string) => {
-    navigate(`/collections/${name}`);
+  const redirectToCollection = (id: number) => {
+    navigate(`/collections/${id}`);
   };
 
   const dialogContent = (
@@ -158,22 +165,22 @@ const AnimeDetail = () => {
         ) : (
           <CollectionListContainer>
             {collections.map(
-              (collection, idx) =>
+              (collection) =>
                 !checkCollectionExists<boolean>(
                   animeCollections,
-                  collection.name,
+                  collection.id,
                   "some"
                 ) && (
                   <CollectionCheckboxContainer>
                     <input
-                      key={idx}
-                      id={`${collection.name}-${idx}`}
-                      name={`${collection.name}-${idx}`}
-                      value={collection.name}
+                      key={collection.id}
+                      id={`${collection.id}`}
+                      name={`${collection.id}`}
+                      value={collection.id}
                       type="checkbox"
                       onChange={handleChangeCheckbox}
                     />
-                    <label htmlFor={`${collection.name}-${idx}`}>
+                    <label htmlFor={`${collection.id}`}>
                       {collection.name}
                     </label>
                   </CollectionCheckboxContainer>

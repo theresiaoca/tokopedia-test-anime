@@ -11,6 +11,7 @@ import {
 import Card from "../../palette/Card";
 import CustomButton from "../../palette/CustomButton";
 import LoadingIndicator from "../../palette/LoadingIndicator";
+import Pagination from "../../palette/Pagination";
 
 import { AnimeType, PageInfoType } from "../types";
 import {
@@ -37,10 +38,6 @@ const AnimeList = () => {
     GetAnimeListParamType
   >(GET_ANIME_LIST, {
     fetchPolicy: "network-only",
-    variables: {
-      page: pageInfo.currentPage,
-      perPage: pageInfo.perPage,
-    },
     onCompleted: (res) => {
       const page = res.Page.pageInfo;
       const medias = res.Page.media;
@@ -74,10 +71,31 @@ const AnimeList = () => {
     setIsBulkAddActive(false);
   };
 
+  const handleNext = () => {
+    setPageInfo((prev) => ({
+      ...prev,
+      perPage: 10,
+      currentPage: prev.currentPage + 1,
+    }));
+  };
+
+  const handlePrev = () => {
+    setPageInfo((prev) => ({
+      ...prev,
+      perPage: 10,
+      currentPage: prev.currentPage - 1,
+    }));
+  };
+
   useEffect(() => {
-    getAnimeList();
+    getAnimeList({
+      variables: {
+        page: pageInfo.currentPage,
+        perPage: pageInfo.perPage,
+      },
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pageInfo.currentPage, pageInfo.perPage]);
 
   return (
     <Container>
@@ -122,6 +140,13 @@ const AnimeList = () => {
                 setSelectedItems={setSelectedAnimeIds}
               />
             ))}
+            <Pagination
+              handleNext={handleNext}
+              handlePrev={handlePrev}
+              disabledPrev={pageInfo.currentPage === 1}
+              disabledNext={!pageInfo.hasNextPage}
+              text={`Page ${pageInfo.currentPage}/${pageInfo.lastPage}`}
+            />
           </CardContainer>
         </>
       )}

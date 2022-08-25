@@ -14,7 +14,7 @@ import { MediaType } from "../../types";
 type AnimeInfoProps = {
   animeDetail: MediaType;
   animeCollections: CollectionType[];
-  onRedirect: (name: string) => void;
+  onRedirect: (id: number) => void;
 };
 const AnimeInfo = ({
   animeDetail,
@@ -52,7 +52,7 @@ const AnimeInfo = ({
           <InfoTitle>Added to Collections:</InfoTitle>
           <CollectionChipContainer>
             {animeCollections.map((animeCollection) => (
-              <CollectionChip onClick={() => onRedirect(animeCollection.name)}>
+              <CollectionChip onClick={() => onRedirect(animeCollection.id)}>
                 {animeCollection.name}
               </CollectionChip>
             ))}

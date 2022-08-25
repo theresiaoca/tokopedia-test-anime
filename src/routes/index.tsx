@@ -30,7 +30,7 @@ export const routes: Array<RouteType> = [
     text: "My Collections",
   },
   {
-    url: "/collections/:name",
+    url: "/collections/:id",
     component: <CollectionDetail />,
     text: "Collection Detail",
   },

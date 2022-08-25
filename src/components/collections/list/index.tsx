@@ -11,10 +11,13 @@ import Input from "../../palette/Input";
 import { ErrorLabel } from "../../palette/Input/InputCss";
 
 import { CollectionContext, CollectionType } from "../CollectionContext";
-import { checkDuplicateCollection } from "../../helpers/checkDuplicateCollection";
+import { checkDuplicateCollectionByName } from "../../helpers/checkDuplicateCollection";
 import { checkCollectionExists } from "../../helpers/checkCollectionExists";
 
-import { INITIAL_COLLECTION } from "../../animes/constants";
+import {
+  INITIAL_COLLECTION,
+  SPECIAL_CHAR_FORMAT,
+} from "../../animes/constants";
 
 const CollectionList = () => {
   const { collections, addCollection, removeCollection, editCollection } =
@@ -31,13 +34,22 @@ const CollectionList = () => {
   const [selectedCollection, setSelectedCollection] =
     useState<CollectionType>(INITIAL_COLLECTION);
 
-  const handleRedirect = (name: string) => {
-    navigate(`/collections/${name}`);
+  const handleRedirect = (id: number) => {
+    navigate(`/collections/${id}`);
   };
 
   const handleAddCollection = (isSubmit: boolean) => {
     if (isSubmit) {
-      const duplicate = checkDuplicateCollection(collections, collectionName);
+      const duplicate = checkDuplicateCollectionByName(
+        collections,
+        collectionName
+      );
+
+      if (collectionName === "") {
+        setErrMessage("Collection name cannot be empty!");
+        setIsError(true);
+        return;
+      }
 
       if (duplicate) {
         setErrMessage(`${collectionName} already exists in colections!`);
@@ -45,7 +57,14 @@ const CollectionList = () => {
         return;
       }
 
+      if (SPECIAL_CHAR_FORMAT.test(collectionName)) {
+        setErrMessage("Collection name cannot contain special characters!");
+        setIsError(true);
+        return;
+      }
+
       const newCollection: CollectionType = {
+        id: (collections.slice(-1)?.[0]?.id || 0) + 1,
         name: collectionName,
         animes: [],
       };
@@ -56,16 +75,29 @@ const CollectionList = () => {
 
   const handleEditCollection = (isSubmit: boolean) => {
     if (isSubmit) {
-      const duplicate = checkDuplicateCollection(
+      const duplicate = checkDuplicateCollectionByName(
         tmpCollections,
         collectionName
       );
+
+      if (collectionName === "") {
+        setErrMessage("Collection name cannot be empty!");
+        setIsError(true);
+        return;
+      }
 
       if (duplicate) {
         setErrMessage(`${collectionName} already exists in colections!`);
         setIsError(true);
         return;
       }
+
+      if (SPECIAL_CHAR_FORMAT.test(collectionName)) {
+        setErrMessage("Collection name cannot contain special characters!");
+        setIsError(true);
+        return;
+      }
+
       editCollection(selectedCollection.name, collectionName);
     }
     handleReset();
@@ -82,27 +114,33 @@ const CollectionList = () => {
 
   const handleRemoveCollection = (isSubmit: boolean) => {
     if (isSubmit) {
-      removeCollection(collectionName);
+      removeCollection(selectedCollection.id);
     }
     handleReset();
   };
 
-  const handleClickRemoveCollection = (name: string) => {
+  const handleClickRemoveCollection = (id: number) => {
     setOpenConfirmDialog(true);
-    setCollectionName(name);
+    const existingCollection: CollectionType = checkCollectionExists(
+      tmpCollections,
+      id,
+      "find"
+    );
+    setSelectedCollection(existingCollection);
+    setCollectionName(existingCollection.name);
   };
 
-  const handleClickEditCollection = (name: string) => {
+  const handleClickEditCollection = (id: number) => {
     setIsEdit(true);
     setOpenAddDialog(true);
 
     const existingCollection: CollectionType = checkCollectionExists(
       tmpCollections,
-      name,
+      id,
       "find"
     );
     setSelectedCollection(existingCollection);
-    setCollectionName(name);
+    setCollectionName(existingCollection.name);
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,10 +195,11 @@ const CollectionList = () => {
                 <Card
                   key={idx}
                   data={{
+                    id: collection.id,
                     title: collection.name,
                     image: collection.animes?.[0]?.coverImage.large,
                   }}
-                  onClick={() => handleRedirect(collection.name)}
+                  onClick={() => handleRedirect(collection.id)}
                   withButtonRemove
                   buttonRemoveText="Delete Collection"
                   onRemove={handleClickRemoveCollection}

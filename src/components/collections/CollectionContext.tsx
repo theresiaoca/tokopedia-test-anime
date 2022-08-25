@@ -1,10 +1,9 @@
 import { createContext, useEffect, useState } from "react";
 
-import { checkCollectionExists } from "../helpers/checkCollectionExists";
-
 import { MediaType } from "../animes/types";
 
 export type CollectionType = {
+  id: number;
   name: string;
   animes: Pick<MediaType, "id" | "title" | "coverImage">[];
 };
@@ -12,13 +11,20 @@ export type CollectionType = {
 export type CollectionContextType = {
   collections: CollectionType[];
   addCollection: (newCollection: CollectionType[]) => void;
+  addAnimeToCollection: (
+    collectionIds: number[],
+    animes: Pick<MediaType, "id" | "title" | "coverImage">[]
+  ) => void;
+  removeAnimeFromCollection: (collectionId: number, animeId: number) => void;
   editCollection: (oldName: string, name: string) => void;
-  removeCollection: (name: string) => void;
+  removeCollection: (id: number) => void;
 };
 
 export const CollectionContext = createContext<CollectionContextType>({
   collections: [],
   addCollection: () => {},
+  addAnimeToCollection: () => {},
+  removeAnimeFromCollection: () => {},
   editCollection: () => {},
   removeCollection: () => {},
 });
@@ -28,47 +34,55 @@ export const CollectionProvider = (props: any) => {
 
   const addCollection = (newCollections: CollectionType[]) => {
     const tmpCollections = [...collections];
-    let tmpNewCollections = tmpCollections;
+    newCollections.forEach((newCollection) => {
+      tmpCollections.push(newCollection);
+    });
 
-    if (!!tmpCollections.length) {
-      tmpNewCollections = tmpCollections.reduce(
-        (tmpNew: CollectionType[], collection) => {
-          const selected = checkCollectionExists<CollectionType | undefined>(
-            newCollections,
-            collection.name,
-            "find"
-          );
+    localStorage.setItem("collections", JSON.stringify(tmpCollections));
+    setCollections(tmpCollections);
+  };
 
-          if (selected) {
-            // add to existing collection
-            tmpNew.push({
-              ...collection,
-              animes: [...collection.animes, ...selected.animes],
-            });
-          } else {
-            // make new collection
-            tmpNew.push(collection);
-          }
-          return tmpNew;
-        },
-        []
-      );
+  const addAnimeToCollection = (
+    collectionIds: number[],
+    animes: Pick<MediaType, "id" | "title" | "coverImage">[]
+  ) => {
+    let tmpCollections = [...collections].reduce(
+      (tmpNew: CollectionType[], collection) => {
+        if (collectionIds.includes(collection.id)) {
+          tmpNew.push({
+            ...collection,
+            animes: [...collection.animes, ...animes],
+          });
+        } else {
+          tmpNew.push(collection);
+        }
+        return tmpNew;
+      },
+      []
+    );
 
-      if (
-        !checkCollectionExists(
-          tmpNewCollections,
-          newCollections[0].name,
-          "some"
-        )
-      ) {
-        tmpNewCollections.push(newCollections[0]);
-      }
-    } else {
-      tmpNewCollections.push(newCollections[0]);
-    }
+    localStorage.setItem("collections", JSON.stringify(tmpCollections));
+    setCollections(tmpCollections);
+  };
 
-    localStorage.setItem("collections", JSON.stringify(tmpNewCollections));
-    setCollections(tmpNewCollections);
+  const removeAnimeFromCollection = (collectionId: number, animeId: number) => {
+    let tmpCollections = [...collections].reduce(
+      (tmpNew: CollectionType[], collection) => {
+        if (collection.id === collectionId) {
+          tmpNew.push({
+            ...collection,
+            animes: collection.animes.filter((anime) => anime.id !== animeId),
+          });
+        } else {
+          tmpNew.push(collection);
+        }
+        return tmpNew;
+      },
+      []
+    );
+
+    localStorage.setItem("collections", JSON.stringify(tmpCollections));
+    setCollections(tmpCollections);
   };
 
   const editCollection = (oldName: string, name: string) => {
@@ -86,9 +100,9 @@ export const CollectionProvider = (props: any) => {
     setCollections(tmpCollections);
   };
 
-  const removeCollection = (name: string) => {
+  const removeCollection = (id: number) => {
     const tmpCollections = collections.filter(
-      (collection) => !(collection.name.toLowerCase() === name.toLowerCase())
+      (collection) => collection.id !== id
     );
 
     localStorage.setItem("collections", JSON.stringify(tmpCollections));
@@ -106,7 +120,14 @@ export const CollectionProvider = (props: any) => {
 
   return (
     <CollectionContext.Provider
-      value={{ collections, addCollection, removeCollection, editCollection }}
+      value={{
+        collections,
+        addCollection,
+        addAnimeToCollection,
+        removeAnimeFromCollection,
+        removeCollection,
+        editCollection,
+      }}
     >
       {props.children}
     </CollectionContext.Provider>

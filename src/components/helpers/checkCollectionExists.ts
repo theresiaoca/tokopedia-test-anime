@@ -2,10 +2,8 @@ import { CollectionType } from "../collections/CollectionContext";
 
 export const checkCollectionExists = <V extends unknown>(
   collections: CollectionType[],
-  value: string,
+  value: number,
   method: "some" | "find"
 ): V => {
-  return collections[method](
-    (collection) => collection.name.toLowerCase() === value.toLowerCase()
-  ) as V;
+  return collections[method]((collection) => collection.id === value) as V;
 };

@@ -23,6 +23,10 @@ export const INITIAL_ANIME_DETAIL: MediaType = {
 };
 
 export const INITIAL_COLLECTION: CollectionType = {
+  id: 0,
   name: "",
   animes: [],
 };
+
+// eslint-disable-next-line
+export const SPECIAL_CHAR_FORMAT = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/

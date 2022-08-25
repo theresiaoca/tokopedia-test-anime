@@ -9,7 +9,7 @@ import {
 
 type CardProps = {
   data: {
-    id?: number;
+    id: number;
     title: string;
     image: string;
     color?: string;
@@ -18,10 +18,10 @@ type CardProps = {
   withCheckbox?: boolean;
   withButtonRemove?: boolean;
   buttonRemoveText?: string;
-  onRemove?: (name: string) => void;
+  onRemove?: (id: number) => void;
   withButtonEdit?: boolean;
   buttonEditText?: string;
-  onEdit?: (name: string) => void;
+  onEdit?: (id: number) => void;
   setSelectedItems?: React.Dispatch<React.SetStateAction<number[]>>;
 };
 const Card = ({
@@ -37,7 +37,7 @@ const Card = ({
   setSelectedItems,
 }: CardProps) => {
   const handleOnClick = () => {
-    if (onClick) onClick(data.id ? data.id : 0);
+    if (onClick) onClick(data.id);
   };
 
   const handleChangeCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,13 +45,13 @@ const Card = ({
     const { checked } = e.target;
     if (setSelectedItems) {
       checked
-        ? setSelectedItems((prev) => [...prev, data.id ? data.id : 0])
+        ? setSelectedItems((prev) => [...prev, data.id])
         : setSelectedItems((prev) => prev.filter((item) => item !== data.id));
     }
   };
 
   const handleRemove = () => {
-    if (onRemove) onRemove(data.title);
+    if (onRemove) onRemove(data.id);
   };
 
   return (
@@ -75,7 +75,7 @@ const Card = ({
       {withButtonEdit && (
         <CustomButton
           type="secondary"
-          onClick={onEdit ? () => onEdit(data.title) : undefined}
+          onClick={onEdit ? () => onEdit(data.id) : undefined}
         >
           {buttonEditText}
         </CustomButton>

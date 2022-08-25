@@ -5,6 +5,10 @@ export const Container = styled.div`
   min-width: 320px;
   width: 100%;
   max-width: 1520px;
+
+  @media screen and (max-width: 1200px) {
+    margin: 20px 0 60px 0;
+  }
 `;
 
 export const Title = styled.div`
